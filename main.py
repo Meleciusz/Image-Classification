@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import keras
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 from PIL import Image, ImageFilter
 import matplotlib.pyplot as plt
 from keras.layers import Dense, Flatten, Conv2D, MaxPool2D, Dropout, BatchNormalization
@@ -194,46 +195,108 @@ print(np.min(first_image), np.max(first_image))
 
 num_classes = len(class_names)
 
-model = Sequential([
-  layers.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
-  layers.Conv2D(16, 3, padding='same', activation='relu'),
-  layers.MaxPooling2D(),
-  layers.Conv2D(32, 3, padding='same', activation='relu'),
-  layers.MaxPooling2D(),
-  layers.Conv2D(64, 3, padding='same', activation='relu'),
-  layers.MaxPooling2D(),
-  layers.Flatten(),
-  layers.Dense(128, activation='relu'),
-  layers.Dense(num_classes)
-])
+# model = Sequential([
+#   layers.Rescaling(1./255, input_shape=(img_height, img_width, 3)),
+#   layers.Conv2D(16, 3, padding='same', activation='relu'),
+#   layers.MaxPooling2D(),
+#   layers.Conv2D(32, 3, padding='same', activation='relu'),
+#   layers.MaxPooling2D(),
+#   layers.Conv2D(64, 3, padding='same', activation='relu'),
+#   layers.MaxPooling2D(),
+#   layers.Flatten(),
+#   layers.Dense(128, activation='relu'),
+#   layers.Dense(num_classes)
+# ])
+#
+# model.compile(optimizer='adam',
+#               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#               metrics=['accuracy'])
+#
+# model.summary()
+#
+# epochs=1
+# history = model.fit(
+#   train_ds,
+#   validation_data=val_ds,
+#   epochs=epochs
+# )
+#
+# model.save('saved_model/my_model')
+#
+# sunflower_url = "https://szachydzieciom.pl/wp-content/uploads/2017/08/chess-1547055_1920.jpg"
+# sunflower_path = tf.keras.utils.get_file('mat', origin=sunflower_url)
+#
+# img = tf.keras.utils.load_img(
+#     sunflower_path, target_size=(img_height, img_width)
+# )
+# img_array = tf.keras.utils.img_to_array(img)
+# img_array = tf.expand_dims(img_array, 0) # Create a batch
+#
+# predictions = model.predict(img_array)
+# score = tf.nn.softmax(predictions[0])
+#
+# print(
+#     "This image most likely belongs to {} with a {:.2f} percent confidence."
+#     .format(class_names[np.argmax(score)], 100 * np.max(score))
+# )
+#
+# sunflower_url2 = "https://st.depositphotos.com/2010753/2300/v/950/depositphotos_23004572-stock-illustration-chess-black-knight.jpg"
+# sunflower_path2 = tf.keras.utils.get_file('kon', origin=sunflower_url2)
+#
+# img2 = tf.keras.utils.load_img(
+#     sunflower_path2, target_size=(img_height, img_width)
+# )
+# img_array2 = tf.keras.utils.img_to_array(img2)
+# img_array2 = tf.expand_dims(img_array2, 0) # Create a batch
+#
+# predictions = model.predict(img_array2)
+# score = tf.nn.softmax(predictions[0])
+#
+# print(
+#     "This image most likely belongs to {} with a {:.2f} percent confidence."
+#     .format(class_names[np.argmax(score)], 100 * np.max(score))
+# )
 
-model.compile(optimizer='adam',
-              loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              metrics=['accuracy'])
 
-model.summary()
+new_model = tf.keras.models.load_model('saved_model/my_model')
 
-epochs=1
-history = model.fit(
-  train_ds,
-  validation_data=val_ds,
-  epochs=epochs
+# Check its architecture
+new_model.summary()
+
+# sunflower_url = "https://szachydzieciom.pl/wp-content/uploads/2017/08/chess-1547055_1920.jpg"
+# sunflower_path = tf.keras.utils.get_file('mat', origin=sunflower_url)
+#
+# img = tf.keras.utils.load_img(
+#     sunflower_path, target_size=(img_height, img_width)
+# )
+# img_array = tf.keras.utils.img_to_array(img)
+# img_array = tf.expand_dims(img_array, 0) # Create a batch
+#
+# predictions = model.predict(img_array)
+# score = tf.nn.softmax(predictions[0])
+
+# print(
+#     "This image most likely belongs to {} with a {:.2f} percent confidence."
+#     .format(class_names[np.argmax(score)], 100 * np.max(score))
+# )
+
+#
+
+
+sunflower_url2 = "https://st.depositphotos.com/2010753/2300/v/950/depositphotos_23004572-stock-illustration-chess-black-knight.jpg"
+sunflower_path2 = tf.keras.utils.get_file('kon', origin=sunflower_url2)
+
+img2 = tf.keras.utils.load_img(
+    sunflower_path2, target_size=(img_height, img_width)
 )
+img_array2 = tf.keras.utils.img_to_array(img2)
+img_array2 = tf.expand_dims(img_array2, 0) # Create a batch
 
-
-sunflower_url = "https://szachydzieciom.pl/wp-content/uploads/2017/08/chess-1547055_1920.jpg"
-sunflower_path = tf.keras.utils.get_file('mat', origin=sunflower_url)
-
-img = tf.keras.utils.load_img(
-    sunflower_path, target_size=(img_height, img_width)
-)
-img_array = tf.keras.utils.img_to_array(img)
-img_array = tf.expand_dims(img_array, 0) # Create a batch
-
-predictions = model.predict(img_array)
+predictions = new_model.predict(img_array2)
 score = tf.nn.softmax(predictions[0])
 
 print(
     "This image most likely belongs to {} with a {:.2f} percent confidence."
     .format(class_names[np.argmax(score)], 100 * np.max(score))
 )
+
