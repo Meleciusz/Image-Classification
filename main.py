@@ -26,22 +26,32 @@ import time
 import tensorflow_hub as hub
 from keras.preprocessing import image
 
-dirname = 'C:/Users/melec/PycharmProjects/Chessman-image-dataset/Chess'
+dirname = 'D:/Stuff/Chessman-image-dataset/Chess'
 dir_chess_folders = os.listdir(dirname)
 dir_chess_paths = [os.path.join(dirname, path) for path in dir_chess_folders]
 
-dirname_work = 'C:/Users/melec/PycharmProjects'
-dir_work = os.path.join('C:/Users/melec/PycharmProjects', 'Result')
+dirname_work = 'D:/Stuff'
+dir_work = os.path.join('D:/Stuff', 'Result')
 dir_work_chess = os.path.join(dir_work, 'Chess')
 
 def check_file(model):
-    sunflower_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Chess_piece_-_Black_king.JPG/100px-Chess_piece_-_Black_king.JPG"
-    sunflower_path = tf.keras.utils.get_file('krul', origin=sunflower_url)
-
+    photo_path = 'C:/Users/Dorota/Desktop/krol.jpeg'
     img = tf.keras.utils.load_img(
-        sunflower_path, target_size=(300, 300)#, color_mode="grayscale"
+        photo_path, target_size=(img_height, img_width)
     )
-    img_array = tf.keras.utils.img_to_array(img)
+    filename, file_extension = os.path.splitext(photo_path)
+    save_path = "tmp" + file_extension
+    img2 = img.convert("1")
+    img2 = img2.filter(ImageFilter.MedianFilter(3))
+    img2.save(save_path)
+
+    img_final = tf.keras.utils.load_img(
+        save_path, target_size=(img_height, img_width)
+    )
+    # img_final.show()
+
+    img_array = tf.keras.utils.img_to_array(img_final)
+    plt.imshow(img_array/255.)
     img_array = tf.expand_dims(img_array, 0)  # Create a batch
 
     predictions = model.predict(img_array)
@@ -53,13 +63,13 @@ def check_file(model):
     )
 
 def makefolders():
-    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess')
-    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Rook')
-    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Knight')
-    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Queen')
-    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Pawn')
-    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/King')
-    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Bishop')
+    os.mkdir('D:/Stuff/Result/Chess')
+    os.mkdir('D:/Stuff/Result/Chess/Rook')
+    os.mkdir('D:/Stuff/Result/Chess/Knight')
+    os.mkdir('D:/Stuff/Result/Chess/Queen')
+    os.mkdir('D:/Stuff/Result/Chess/Pawn')
+    os.mkdir('D:/Stuff/Result/Chess/King')
+    os.mkdir('D:/Stuff/Result/Chess/Bishop')
     bishop_path_work = os.path.join(dir_work_chess, 'Bishop')
     knight_path_work = os.path.join(dir_work_chess, 'Knight')
     queen_path_work = os.path.join(dir_work_chess, 'Queen')
@@ -204,27 +214,19 @@ def train_model():
         epochs=epochs
     )
 
-    model.save('saved_model/my_model')
+    model.save('saved_model/model')
     check_file(model)
 
 
 if not os.path.exists(dir_work_chess):
     makefolders()
 
-model_path = "C:/Users/melec/PycharmProjects/BIAI/saved_model/my_model.pb"
+# model_path = "C:/Users/melec/PycharmProjects/BIAI/saved_model/my_model.pb"
 want_to_train_model : bool = 0
 file_or_folder : bool = 1
 
 if want_to_train_model == 1:
     train_model()
 else:
-    model = tf.keras.models.load_model('saved_model/my_model')
+    model = tf.keras.models.load_model('saved_model/model')
     check_file(model)
-
-
-
-
-
-
-
-
