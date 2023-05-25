@@ -1,0 +1,203 @@
+Index: main.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># This Python 3 environment comes with many helpful analytics libraries installed\r\n# It is defined by the kaggle/python docker image: https://github.com/kaggle/docker-python\r\n# For example, here's several helpful packages to load in\r\n\r\n# Input data files are available in the \"../input/\" directory.\r\n# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\r\n\r\nimport os\r\n\r\nimport cv2\r\nimport matplotlib.pyplot as plt\r\nimport keras\r\nimport numpy as np\r\nimport tensorflow as tf\r\nfrom tensorflow import keras\r\nfrom PIL import Image, ImageFilter\r\nimport matplotlib.pyplot as plt\r\nfrom keras.layers import Dense, Flatten, Conv2D, MaxPool2D, Dropout, BatchNormalization\r\nfrom keras.models import Sequential\r\nfrom keras.models import load_model\r\nfrom sklearn.tree import DecisionTreeRegressor\r\nfrom tensorflow.keras import layers\r\nfrom keras.preprocessing.image import ImageDataGenerator\r\nfrom keras.callbacks import ReduceLROnPlateau\r\nimport time\r\nimport tensorflow_hub as hub\r\nfrom keras.preprocessing import image\r\n\r\ndirname = 'C:/Users/melec/PycharmProjects/Chessman-image-dataset/Chess'\r\ndir_chess_folders = os.listdir(dirname)\r\ndir_chess_paths = [os.path.join(dirname, path) for path in dir_chess_folders]\r\n\r\ndirname_work = 'C:/Users/melec/PycharmProjects'\r\ndir_work = os.path.join('C:/Users/melec/PycharmProjects', 'Result')\r\ndir_work_chess = os.path.join(dir_work, 'Chess')\r\n\r\ndef check_file(model):\r\n    sunflower_url = \"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Chess_piece_-_Black_king.JPG/100px-Chess_piece_-_Black_king.JPG\"\r\n    sunflower_path = tf.keras.utils.get_file('krul', origin=sunflower_url)\r\n\r\n    img = tf.keras.utils.load_img(\r\n        sunflower_path, target_size=(300, 300)#, color_mode=\"grayscale\"\r\n    )\r\n    img_array = tf.keras.utils.img_to_array(img)\r\n    img_array = tf.expand_dims(img_array, 0)  # Create a batch\r\n\r\n    predictions = model.predict(img_array)\r\n    score = tf.nn.softmax(predictions[0])\r\n\r\n    print(\r\n        \"This image most likely belongs to {} with a {:.2f} percent confidence.\"\r\n        .format(class_names[np.argmax(score)], 100 * np.max(score))\r\n    )\r\n\r\ndef makefolders():\r\n    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess')\r\n    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Rook')\r\n    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Knight')\r\n    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Queen')\r\n    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Pawn')\r\n    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/King')\r\n    os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Bishop')\r\n    bishop_path_work = os.path.join(dir_work_chess, 'Bishop')\r\n    knight_path_work = os.path.join(dir_work_chess, 'Knight')\r\n    queen_path_work = os.path.join(dir_work_chess, 'Queen')\r\n    rook_path_work = os.path.join(dir_work_chess, 'Rook')\r\n    king_path_work = os.path.join(dir_work_chess, 'King')\r\n    pawn_path_work = os.path.join(dir_work_chess, 'Pawn')\r\n    dir_chess_folders_work = os.listdir(dir_work_chess)\r\n    dir_chess_paths_work = [os.path.join(dir_work_chess, path) for path in dir_chess_folders_work]\r\n\r\n\r\n    def image_binarization(path_from, path_to):    #wyszarzanie\r\n\r\n        i=1\r\n        files = os.listdir(path_from)\r\n        for file in files:\r\n            try:\r\n                file_dir = os.path.join(path_from, file)\r\n                file_dir_save = os.path.join(path_to, file)\r\n                img = Image.open(file_dir)\r\n                img = img.convert(\"1\")\r\n                img.save(file_dir_save)\r\n                i=i+1\r\n            except:\r\n                continue\r\n\r\n    image_binarization(dir_chess_paths[0], bishop_path_work)\r\n    image_binarization(dir_chess_paths[1], king_path_work)\r\n    image_binarization(dir_chess_paths[2], rook_path_work)\r\n    image_binarization(dir_chess_paths[3], pawn_path_work)\r\n    image_binarization(dir_chess_paths[4], queen_path_work)\r\n    image_binarization(dir_chess_paths[5], knight_path_work)\r\n\r\n\r\n    def image_median_filtering(path_from, path_to, window_size=3):  #Polepszanie jakości szarego zdjęcia\r\n\r\n        i=1\r\n        files = os.listdir(path_from)\r\n        for file in files:\r\n            try:\r\n                file_dir = os.path.join(path_from, file)\r\n                file_dir_save = os.path.join(path_to, file)\r\n                img = Image.open(file_dir)\r\n                img = img.filter(ImageFilter.MedianFilter(window_size))\r\n                img.save(file_dir_save)\r\n                i=i+1\r\n            except:\r\n                continue\r\n\r\n\r\n    image_median_filtering(bishop_path_work, bishop_path_work)\r\n    image_median_filtering(king_path_work, king_path_work)\r\n    image_median_filtering(rook_path_work, rook_path_work)\r\n    image_median_filtering(pawn_path_work, pawn_path_work)\r\n    image_median_filtering(queen_path_work, queen_path_work)\r\n    image_median_filtering(knight_path_work, knight_path_work)\r\n\r\nbatch_size = 32\r\nimg_height = 300\r\nimg_width = 300\r\n\r\ntrain_ds = tf.keras.utils.image_dataset_from_directory(\r\n    dir_work_chess,\r\n    validation_split=0.2,\r\n    subset=\"training\",\r\n    seed=123,\r\n    image_size=(img_height, img_width),\r\n    batch_size=batch_size)\r\n\r\nval_ds = tf.keras.utils.image_dataset_from_directory(\r\n    dir_work_chess,\r\n    validation_split=0.2,\r\n    subset=\"validation\",\r\n    seed=123,\r\n    image_size=(img_height, img_width),\r\n    batch_size=batch_size)\r\n\r\nclass_names = train_ds.class_names\r\n\r\nprint(class_names)\r\n\r\ndef train_model():\r\n    batch_size = 32\r\n    img_height = 300\r\n    img_width = 300\r\n\r\n    train_ds = tf.keras.utils.image_dataset_from_directory(\r\n        dir_work_chess,\r\n        validation_split=0.2,\r\n        subset=\"training\",\r\n        seed=123,\r\n        image_size=(img_height, img_width),\r\n        batch_size=batch_size)\r\n\r\n    val_ds = tf.keras.utils.image_dataset_from_directory(\r\n        dir_work_chess,\r\n        validation_split=0.2,\r\n        subset=\"validation\",\r\n        seed=123,\r\n        image_size=(img_height, img_width),\r\n        batch_size=batch_size)\r\n\r\n    class_names = train_ds.class_names\r\n\r\n    AUTOTUNE = tf.data.AUTOTUNE\r\n\r\n    train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)\r\n    val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)\r\n\r\n    normalization_layer = layers.Rescaling(1. / 255)\r\n\r\n    normalized_ds = train_ds.map(lambda x, y: (normalization_layer(x), y))\r\n    image_batch, labels_batch = next(iter(normalized_ds))\r\n    first_image = image_batch[0]\r\n\r\n    print(np.min(first_image), np.max(first_image))\r\n\r\n    num_classes = len(class_names)\r\n\r\n    model = Sequential([\r\n        layers.Rescaling(1. / 255, input_shape=(img_height, img_width, 3)),\r\n        layers.Conv2D(16, 3, padding='same', activation='relu'),\r\n        layers.MaxPooling2D(),\r\n        layers.Conv2D(32, 3, padding='same', activation='relu'),\r\n        layers.MaxPooling2D(),\r\n        layers.Conv2D(64, 3, padding='same', activation='relu'),\r\n        layers.MaxPooling2D(),\r\n        layers.Flatten(),\r\n        layers.Dense(128, activation='relu'),\r\n        layers.Dense(num_classes)\r\n    ])\r\n\r\n    model.compile(optimizer='adam',\r\n                  loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),\r\n                  metrics=['accuracy'])\r\n\r\n    model.summary()\r\n\r\n    epochs = 10\r\n    history = model.fit(\r\n        train_ds,\r\n        validation_data=val_ds,\r\n        epochs=epochs\r\n    )\r\n\r\n    model.save('saved_model/my_model')\r\n    check_file(model)\r\n\r\n\r\nif not os.path.exists(dir_work_chess):\r\n    makefolders()\r\n\r\nmodel_path = \"C:/Users/melec/PycharmProjects/BIAI/saved_model/my_model.pb\"\r\nwant_to_train_model : bool = 0\r\nfile_or_folder : bool = 1\r\n\r\nif want_to_train_model == 1:\r\n    train_model()\r\nelse:\r\n    model = tf.keras.models.load_model('saved_model/my_model')\r\n    check_file(model)\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main.py b/main.py
+--- a/main.py	(revision 643f2811a87704d02d39e548860761ff0f8b70d5)
++++ b/main.py	(date 1685035098424)
+@@ -1,30 +1,28 @@
+-# This Python 3 environment comes with many helpful analytics libraries installed
+-# It is defined by the kaggle/python docker image: https://github.com/kaggle/docker-python
+-# For example, here's several helpful packages to load in
+-
+ # Input data files are available in the "../input/" directory.
+ # For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+-
+ import os
+ 
+ import cv2
++import keras.losses
+ import matplotlib.pyplot as plt
+-import keras
+ import numpy as np
+ import tensorflow as tf
+-from tensorflow import keras
++import tensorflow_model_optimization as tfmot
+ from PIL import Image, ImageFilter
+-import matplotlib.pyplot as plt
+-from keras.layers import Dense, Flatten, Conv2D, MaxPool2D, Dropout, BatchNormalization
+ from keras.models import Sequential
+-from keras.models import load_model
+-from sklearn.tree import DecisionTreeRegressor
+ from tensorflow.keras import layers
+-from keras.preprocessing.image import ImageDataGenerator
+-from keras.callbacks import ReduceLROnPlateau
+-import time
+-import tensorflow_hub as hub
+-from keras.preprocessing import image
++
++from keras.layers import Dense
++from keras.optimizers import Adam
++
++lossList = []
++accuracyList = []
++valLossList = []
++valAccuracyList = []
++
++# This Python 3 environment comes with many helpful analytics libraries installed
++# It is defined by the kaggle/python docker image: https://github.com/kaggle/docker-python
++# For example, here's several helpful packages to load in
+ 
+ dirname = 'C:/Users/melec/PycharmProjects/Chessman-image-dataset/Chess'
+ dir_chess_folders = os.listdir(dirname)
+@@ -34,24 +32,65 @@
+ dir_work = os.path.join('C:/Users/melec/PycharmProjects', 'Result')
+ dir_work_chess = os.path.join(dir_work, 'Chess')
+ 
++def show(photo_path, score):
++    img = np.asarray((Image.open(photo_path)))
++    plt.title("This image most likely belongs to {} with a {:.2f} percent confidence."
++        .format(class_names[np.argmax(score)], 100 * np.max(score)))
++    plt.imshow(img)
++    plt.show()
++
++# def CV(model, photo_path):
++#     image = cv2.imread(photo_path)
++#     x = np.array([0.25, 0.25, 0.75, 0.75]).reshape(1, 4)
++#     y = model.predict(x)
++#     x1, y1, x2, y2 = y.flatten()
++#     h, w, _ = image.shape
++#
++#     x1, y1, x2, y2 = int(w * x1), int(h * y1), int(w * x2), int(h * y2)
++#     cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
++#
++#     cv2.imshow('Image with Rectangle', image)
++#     cv2.waitKey(0)
++#     cv2.destroyAllWindows()
++
+ def check_file(model):
+-    sunflower_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Chess_piece_-_Black_king.JPG/100px-Chess_piece_-_Black_king.JPG"
+-    sunflower_path = tf.keras.utils.get_file('krul', origin=sunflower_url)
+ 
++    photo_path = 'C:/Users/melec/Desktop/wieza.jpg'
++    #CV(model, photo_path)
+     img = tf.keras.utils.load_img(
+-        sunflower_path, target_size=(300, 300)#, color_mode="grayscale"
++        photo_path, target_size=(img_height, img_width)
+     )
+-    img_array = tf.keras.utils.img_to_array(img)
++    filename, file_extension = os.path.splitext(photo_path)
++    save_path = "tmp" + file_extension
++    img2 = img.convert("1")
++    img2 = img2.filter(ImageFilter.MedianFilter(3))
++    img2.save(save_path)
++
++    img_final = tf.keras.utils.load_img(
++        save_path, target_size=(img_height, img_width)
++    )
++    # img_final.show()
++
++    img_array = tf.keras.utils.img_to_array(img_final)
++    plt.imshow(img_array / 255.)
++
+     img_array = tf.expand_dims(img_array, 0)  # Create a batch
+ 
+     predictions = model.predict(img_array)
+     score = tf.nn.softmax(predictions[0])
+ 
++
++    #tf.keras.preprocessing.image.array_to_img(img).show()
++
++    # show(photo_path, score)
++
+     print(
+         "This image most likely belongs to {} with a {:.2f} percent confidence."
+         .format(class_names[np.argmax(score)], 100 * np.max(score))
+     )
+ 
++    print(tf.keras.losses.Loss)
++
+ def makefolders():
+     os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess')
+     os.mkdir('C:/Users/melec/PycharmProjects/Result/Chess/Rook')
+@@ -163,10 +202,10 @@
+ 
+     class_names = train_ds.class_names
+ 
+-    AUTOTUNE = tf.data.AUTOTUNE
++    AUTOTUNE = tf.data.AUTOTUNE #Dynamiczne dostosowywanie operacji wczytywania danych (buffor, wątki itp)
+ 
+-    train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE)
+-    val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
++    train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=AUTOTUNE) #Przechowuje obrazy w pamięci
++    val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE) #wykonywanie modelu podczas uczenia
+ 
+     normalization_layer = layers.Rescaling(1. / 255)
+ 
+@@ -174,7 +213,7 @@
+     image_batch, labels_batch = next(iter(normalized_ds))
+     first_image = image_batch[0]
+ 
+-    print(np.min(first_image), np.max(first_image))
++    # print(np.min(first_image), np.max(first_image))
+ 
+     num_classes = len(class_names)
+ 
+@@ -191,19 +230,27 @@
+         layers.Dense(num_classes)
+     ])
+ 
++
+     model.compile(optimizer='adam',
+                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                   metrics=['accuracy'])
+ 
+     model.summary()
+ 
+-    epochs = 10
++    epochs = 3
+     history = model.fit(
+         train_ds,
+         validation_data=val_ds,
+         epochs=epochs
+     )
+ 
++    loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True) #różnica między dwoma entropiami
++
++    lossList.append(history.history['loss'])
++    accuracyList.append(history.history['accuracy'])
++    valLossList.append(history.history['val_loss'])
++    valAccuracyList.append(history.history['val_accuracy'])
++
+     model.save('saved_model/my_model')
+     check_file(model)
+ 
+@@ -212,11 +259,22 @@
+     makefolders()
+ 
+ model_path = "C:/Users/melec/PycharmProjects/BIAI/saved_model/my_model.pb"
+-want_to_train_model : bool = 0
+-file_or_folder : bool = 1
++want_to_train_model : bool = 1
++file_or_folder : bool = 0
+ 
+ if want_to_train_model == 1:
+-    train_model()
++    for i in range(0, 5):
++        train_model()
++
++    loss = np.mean(lossList)
++    accuracy = np.mean(accuracyList)
++    valLoss = np.mean(valLossList)
++    valAccuracy = np.mean(valAccuracyList)
++
++    print('loss', loss)
++    print('accuracy', accuracy)
++    print('valLos', valLoss)
++    print('valAccuracy', valAccuracy)
+ else:
+     model = tf.keras.models.load_model('saved_model/my_model')
+     check_file(model)

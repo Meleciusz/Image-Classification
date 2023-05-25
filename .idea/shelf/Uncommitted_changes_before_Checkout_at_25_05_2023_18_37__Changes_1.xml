@@ -1,0 +1,29 @@
+<changelist name="Uncommitted_changes_before_Checkout_at_25_05_2023_18_37_[Changes]1" date="1685032649510" recycled="true" deleted="true">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_25_05_2023_18_37_[Changes]1/shelved.patch" />
+  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 25.05.2023 18:37 [Changes]" />
+  <binary>
+    <option name="BEFORE_PATH" value="saved_model/my_model/variables/variables.data-00000-of-00001" />
+    <option name="AFTER_PATH" value="saved_model/my_model/variables/variables.data-00000-of-00001" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_25_05_2023_18_37_[Changes]1/variables.data-00000-of-00001" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="saved_model/my_model/keras_metadata.pb" />
+    <option name="AFTER_PATH" value="saved_model/my_model/keras_metadata.pb" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_25_05_2023_18_37_[Changes]1/keras_metadata.pb" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="saved_model/my_model/variables/variables.index" />
+    <option name="AFTER_PATH" value="saved_model/my_model/variables/variables.index" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_25_05_2023_18_37_[Changes]1/variables.index" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="saved_model/my_model/saved_model.pb" />
+    <option name="AFTER_PATH" value="saved_model/my_model/saved_model.pb" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_25_05_2023_18_37_[Changes]1/saved_model.pb" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="saved_model/my_model/fingerprint.pb" />
+    <option name="AFTER_PATH" value="saved_model/my_model/fingerprint.pb" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_25_05_2023_18_37_[Changes]1/fingerprint.pb" />
+  </binary>
+</changelist>
