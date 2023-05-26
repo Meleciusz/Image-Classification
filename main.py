@@ -3,6 +3,8 @@
 import os
 
 import cv2
+import nnabla as nn
+import time
 import keras.losses
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,6 +21,8 @@ lossList = []
 accuracyList = []
 valLossList = []
 valAccuracyList = []
+train_loss_results = []
+train_accuracy_results = []
 
 # This Python 3 environment comes with many helpful analytics libraries installed
 # It is defined by the kaggle/python docker image: https://github.com/kaggle/docker-python
@@ -179,6 +183,96 @@ class_names = train_ds.class_names
 
 print(class_names)
 
+def trainModel(model, normalized_ds, optimizer):
+    features, labels = next(iter(normalized_ds))
+
+    loss_value, grads = grad(model, features, labels)
+
+    num_epochs = 201
+
+    for epoch in range(num_epochs):
+        epoch_loss_avg = tf.keras.metrics.Mean()
+        epoch_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
+
+        # Training loop - using batches of 32
+        for x, y in train_ds:
+            # Optimize the model
+            loss_value, grads = grad(model, x, y)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+
+            # Track progress
+            epoch_loss_avg.update_state(loss_value)  # Add current batch loss
+            # Compare predicted label to actual label
+            # training=True is needed only if there are layers with different
+            # behavior during training versus inference (e.g. Dropout).
+            epoch_accuracy.update_state(y, model(x, training=True))
+
+        # End epoch
+        train_loss_results.append(epoch_loss_avg.result())
+        train_accuracy_results.append(epoch_accuracy.result())
+
+        if epoch % 50 == 0:
+            print("Epoch {:03d}: Loss: {:.3f}, Accuracy: {:.3%}".format(epoch,
+                                                                        epoch_loss_avg.result(),
+                                                                        epoch_accuracy.result()))
+    fig, axes = plt.subplots(2, sharex=True, figsize=(12, 8))
+    fig.suptitle('Training Metrics')
+
+    axes[0].set_ylabel("Loss", fontsize=14)
+    axes[0].plot(train_loss_results)
+
+    axes[1].set_ylabel("Accuracy", fontsize=14)
+    axes[1].set_xlabel("Epoch", fontsize=14)
+    axes[1].plot(train_accuracy_results)
+    plt.show()
+
+
+def fitFunction(model, train_ds, optimizer):
+
+    loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    train_acc_metric = keras.metrics.SparseCategoricalAccuracy()
+    val_acc_metric = keras.metrics.SparseCategoricalAccuracy()
+    epochs = 3
+    for epoch in range(epochs):
+        print("\nStart of epoch %d" % (epoch,))
+        start_time = time.time()
+
+        # Iterate over the batches of the dataset.
+        for step, (x_batch_train, y_batch_train) in enumerate(train_ds):
+            with tf.GradientTape() as tape:
+                logits = model(x_batch_train, training=True)
+                loss_value = loss_fn(y_batch_train, logits)
+            grads = tape.gradient(loss_value, model.trainable_weights)
+            optimizer.apply_gradients(zip(grads, model.trainable_weights))
+
+            # Update training metric.
+            train_acc_metric.update_state(y_batch_train, logits)
+
+            # Log every 200 batches.
+            if step % 200 == 0:
+                print(
+                    "Training loss (for one batch) at step %d: %.4f"
+                    % (step, float(loss_value))
+                )
+                print("Seen so far: %d samples" % ((step + 1) * batch_size))
+
+        # Display metrics at the end of each epoch.
+        train_acc = train_acc_metric.result()
+        print("Training acc over epoch: %.4f" % (float(train_acc),))
+
+        # Reset training metrics at the end of each epoch
+        train_acc_metric.reset_states()
+
+        # Run a validation loop at the end of each epoch.
+        for x_batch_val, y_batch_val in val_ds:
+            val_logits = model(x_batch_val, training=False)
+            # Update val metrics
+            val_acc_metric.update_state(y_batch_val, val_logits)
+        val_acc = val_acc_metric.result()
+        val_acc_metric.reset_states()
+        print("Validation acc: %.4f" % (float(val_acc),))
+        print("Time taken: %.2fs" % (time.time() - start_time))
+
 def train_model():
     batch_size = 32
     img_height = 300
@@ -217,34 +311,49 @@ def train_model():
 
     num_classes = len(class_names)
 
+    # tf.keras.Input(
+    #     shape=None,
+    #     batch_size=None,
+    #     name=None,
+    #     dtype=None,
+    #     sparse=None,
+    #     tensor=None,
+    #     ragged=None,
+    #     type_spec=None,
+    # )
+
     model = Sequential([
         layers.Rescaling(1. / 255, input_shape=(img_height, img_width, 3)),
+        layers.Conv2D(1, 2, padding='same', activation='relu'),
+        layers.MaxPooling2D(), layers.BatchNormalization(),
+        layers.Conv2D(8, 2, padding='same', activation='relu'),
+        layers.MaxPooling2D(), layers.BatchNormalization(),
         layers.Conv2D(16, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Conv2D(32, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Conv2D(64, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
+        layers.MaxPooling2D(), layers.BatchNormalization(),
         layers.Flatten(),
         layers.Dense(128, activation='relu'),
         layers.Dense(num_classes)
     ])
 
 
-    model.compile(optimizer='adam',
+    optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
+    # optimizer='adam'
+
+    trainModel(model, normalized_ds, optimizer)
+
+    model.compile(optimizer=optimizer,
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
-
     model.summary()
 
-    epochs = 3
-    history = model.fit(
-        train_ds,
-        validation_data=val_ds,
-        epochs=epochs
-    )
+    # fitFunction(model, train_ds, optimizer)
 
-    loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True) #różnica między dwoma entropiami
+    # epochs = 3
+    # history = model.fit(
+    #     train_ds,
+    #     validation_data=val_ds,
+    #     epochs=epochs
+    # )
 
     lossList.append(history.history['loss'])
     accuracyList.append(history.history['accuracy'])
@@ -254,6 +363,34 @@ def train_model():
     model.save('saved_model/my_model')
     check_file(model)
 
+loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+def loss(model, x, y, training):
+  # training=training is needed only if there are layers with different
+  # behavior during training versus inference (e.g. Dropout).
+  y_ = model(x, training=training)
+
+  return loss_object(y_true=y, y_pred=y_)
+def test_step(x, y, model, val_acc_metric):
+    val_logits = model(x, training=False)
+    val_acc_metric.update_state(y, val_logits)
+def grad(model, inputs, targets):
+  with tf.GradientTape() as tape:
+    loss_value = loss(model, inputs, targets, training=True)
+  return loss_value, tape.gradient(loss_value, model.trainable_variables)
+
+def train_step(x, y, model):
+    with tf.GradientTape() as tape:
+        train_acc_metric = keras.metrics.SparseCategoricalAccuracy()
+        optimizer = keras.optimizers.SGD(learning_rate=1e-3)
+        loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        logits = model(x, training=True)
+        loss_value = loss_fn(y, logits)
+        # Add any extra losses created during the forward pass.
+        loss_value += sum(model.losses)
+    grads = tape.gradient(loss_value, model.trainable_weights)
+    optimizer.apply_gradients(zip(grads, model.trainable_weights))
+    train_acc_metric.update_state(y, logits)
+    return loss_value
 
 if not os.path.exists(dir_work_chess):
     makefolders()
@@ -263,7 +400,7 @@ want_to_train_model : bool = 1
 file_or_folder : bool = 0
 
 if want_to_train_model == 1:
-    for i in range(0, 5):
+    for i in range(0, 1):
         train_model()
 
     loss = np.mean(lossList)
